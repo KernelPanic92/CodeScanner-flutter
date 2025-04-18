@@ -10,20 +10,24 @@ extension CameraImageToInputImage on CameraImage {
       allBytes.putUint8List(plane.bytes);
     }
     return allBytes.done().buffer.asUint8List();
-  }  
+  }
 
   InputImage toInputImage(CameraDescription camera) {
-    final inputImageData = InputImageData(
-      size: Size(width.toDouble(), height.toDouble()),
-      imageRotation: InputImageRotationValue.fromRawValue(camera.sensorOrientation) ?? InputImageRotation.rotation0deg,
-      inputImageFormat: InputImageFormatValue.fromRawValue(format.raw) ?? InputImageFormat.nv21,
-      planeData: planes.map((Plane plane) => InputImagePlaneMetadata(
-        bytesPerRow: plane.bytesPerRow,
-        height: plane.height,
-        width: plane.width,
-      )).toList(),
+    final totalBytesPerRow = planes.fold(
+      0,
+      (totalBytesPerRow, plane) => totalBytesPerRow + plane.bytesPerRow,
     );
-    return InputImage.fromBytes(bytes: getBytes(), inputImageData: inputImageData);
+
+    final inputImageData = InputImageMetadata(
+      size: Size(width.toDouble(), height.toDouble()),
+      rotation:
+          InputImageRotationValue.fromRawValue(camera.sensorOrientation) ??
+              InputImageRotation.rotation0deg,
+      format: InputImageFormatValue.fromRawValue(format.raw) ??
+          InputImageFormat.nv21,
+      bytesPerRow: totalBytesPerRow,
+    );
+    return InputImage.fromBytes(bytes: getBytes(), metadata: inputImageData);
   }
 }
 
